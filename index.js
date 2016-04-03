@@ -14,7 +14,7 @@ import parseCSV from './parse_csv';
 
 function requestImage(type, lon, lat) {
   return fetch(`http://localhost:9999/${type}/${lon}/${lat}`)
-    .then(res => res.text())
+    .then(res => res.json())
     .catch(e => console.log(e));
 }
 
@@ -22,22 +22,18 @@ class App extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      results: [
-        {
-          img: 'https://maps.googleapis.com/maps/api/staticmap?center=5.55298012817435%2C-0.187067272635455&zoom=19&size=500x500&maptype=satellite&key=AIzaSyAvxKwQPytvABv_gxCVNXY1DSqlqBG_-Do',
-          distance: 12,
-          type: 'stadium',
-          coordsEntered: [0, 0],
-          coordsFound: [1, 1]
-        }
-      ]
+      results: []
     };
     this.request = this.request.bind(this);
     this.onDrop = this.onDrop.bind(this);
   }
   request(type, lon, lat) {
     requestImage(type, lon, lat)
-      .then(img => console.log(img));
+      .then(data => {
+        var { results } = this.state;
+        results.push(data);
+        this.setState({ results });
+      });
   }
   onDrop(/*file*/) {
     /*
@@ -48,7 +44,7 @@ class App extends React.Component {
     };
     reader.readAsText(file);
     */
-    parseCSV('1,2,3\n0,0,building')
+    parseCSV('1,2,3\n0,0,building\n10,10,building\n0,0,building\n0,0,building')
       .then(data => {
         var row;
         for (var i = 0; i < data.length; i++) {
@@ -64,18 +60,34 @@ class App extends React.Component {
     return <div className='container'>
       <PageHeader heading='Sky Truth' description='Fill the form or drag and drop a CSV file onto the page. Whatever floats your boat, man.'/>
       <div className='mb4'>
-        <DropZone onDrop={this.onDrop}>
+        <DropZone
+          onDrop={this.onDrop}
+          style={{
+            width: '100%',
+            height: '40px',
+            borderWidth: 2,
+            borderColor: '#666',
+            borderStyle: 'dashed',
+            borderRadius: 5,
+            textAlign: 'center'
+          }}
+          activeStyle={{
+            borderStyle: 'solid',
+            backgroundColor: '#eee'
+          }}>
           <div>drop csv here</div>
         </DropZone>
       </div>
       <Form onSubmit={this.request}/>
-      {this.state.results.map((result, i) => <Result
-        key={i}
-        img={result.img}
-        type={result.type}
-        distance={result.distance}
-        coordsEntered={result.coordsEntered}
-        coordsFound={result.coordsFound}/>)}
+      <div style={{display: 'flex', flexWrap: 'wrap'}}>
+        {this.state.results.map((result, i) => <Result
+          key={i}
+          img={result.img}
+          type={result.type}
+          distance={result.distance}
+          coordsEntered={result.coordsEntered}
+          coordsFound={result.coordsFound}/>)}
+      </div>
       <Footer>this has been an abrokwa™ joint</Footer>
     </div>;
   }
@@ -84,7 +96,7 @@ class App extends React.Component {
 class Result extends React.Component {
   render() {
     var { img, type, distance, coordsEntered, coordsFound } = this.props;
-    return <div style={{width: '30%'}}>
+    return <div style={{width: '30%', marginRight: '10px'}}>
       <Card rounded={true}>
         <CardImage src={img}/>
         <Heading level={4}>type: {type}</Heading>
