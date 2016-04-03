@@ -1,5 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
+import DropZone from 'react-dropzone';
 import {
   Input,
   Button,
@@ -9,6 +10,7 @@ import {
   Heading,
   Footer
 } from 'rebass';
+import parseCSV from './parse_csv';
 
 function requestImage(type, lon, lat) {
   return fetch(`http://localhost:9999/${type}/${lon}/${lat}`)
@@ -31,14 +33,41 @@ class App extends React.Component {
       ]
     };
     this.request = this.request.bind(this);
+    this.onDrop = this.onDrop.bind(this);
   }
   request(type, lon, lat) {
     requestImage(type, lon, lat)
       .then(img => console.log(img));
   }
+  onDrop(/*file*/) {
+    /*
+    var reader = new FileReader();
+    reader.onload = function() {
+      var text = reader.result;
+      console.log(text);
+    };
+    reader.readAsText(file);
+    */
+    parseCSV('1,2,3\n0,0,building')
+      .then(data => {
+        var row;
+        for (var i = 0; i < data.length; i++) {
+          row = data[i];
+          var lat = row[0],
+              lon = row[1],
+              type = row[2];
+          this.request(type, lon, lat);
+        }
+      });
+  }
   render() {
     return <div className='container'>
-      <PageHeader heading='Sky Truth' description='Get Satellite Imagery! Fill the form or drag and drop a CSV file onto the page. Whatever floats your boat, man ;)'/>
+      <PageHeader heading='Sky Truth' description='Fill the form or drag and drop a CSV file onto the page. Whatever floats your boat, man.'/>
+      <div className='mb4'>
+        <DropZone onDrop={this.onDrop}>
+          <div>drop csv here</div>
+        </DropZone>
+      </div>
       <Form onSubmit={this.request}/>
       {this.state.results.map((result, i) => <Result
         key={i}
@@ -55,7 +84,7 @@ class App extends React.Component {
 class Result extends React.Component {
   render() {
     var { img, type, distance, coordsEntered, coordsFound } = this.props;
-    return <div style={{width: '50%'}}>
+    return <div style={{width: '30%'}}>
       <Card rounded={true}>
         <CardImage src={img}/>
         <Heading level={4}>type: {type}</Heading>
@@ -72,13 +101,13 @@ class Form extends React.Component {
     return <div className='mb4'>
       <div style={{display: 'table'}}>
         <div style={{display: 'table-row'}}>
-          <div style={{width: '33%', display: 'table-cell'}}>
+          <div style={{width: '20%', display: 'table-cell'}}>
             <Input name='type' label='type'/>
           </div>
-          <div style={{width: '33%', display: 'table-cell'}}>
+          <div style={{width: '20%', display: 'table-cell'}}>
             <Input name='longitude' label='longitude'/>
           </div>
-          <div style={{width: '33%', display: 'table-cell'}}>
+          <div style={{width: '20%', display: 'table-cell'}}>
             <Input name='latitude' label='latitude'/>
           </div>
         </div>

@@ -3,6 +3,8 @@ var express = require('express');
 var cors = require('cors');
 var pg = require('pg');
 var GoogleMapsAPI = require('googlemaps');
+var distance = require('turf-distance');
+var point = require('turf-point');
 
 var app = express();
 
@@ -14,7 +16,7 @@ var gmAPI = new GoogleMapsAPI({ key: API_KEY });
 var conString = 'postgres://kelvinabrokwa:@localhost/skytruth';
 
 app.get('/:type/:lon/:lat', function(req, res) {
-  fetch(req.params.lon, req.params.lat)
+  fetch(req.params.type, req.params.lon, req.params.lat)
     .then(function(url) { res.send(url); });
 });
 
@@ -22,7 +24,7 @@ app.listen(PORT, function() {
   console.log('Server listening on port:', PORT);
 });
 
-function fetch(lon, lat) {
+function fetch(type, lon, lat) {
   return new Promise(function(resolve, reject) {
     pg.connect(conString, function(err, client, done) {
       if (err) reject(err);
@@ -41,8 +43,14 @@ function fetch(lon, lat) {
               size: '500x500',
               maptype: 'satellite'
             };
-            var url = gmAPI.staticMap(params);
-            resolve(url);
+            var img = gmAPI.staticMap(params);
+            resolve({
+              img: img,
+              type: type,
+              distance: distance(point(coords), point([lon, lat]), 'miles'),
+              coordsEntered: [lon, lat],
+              coordsFound: coords
+            });
           });
     });
   });
